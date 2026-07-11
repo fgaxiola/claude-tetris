@@ -4,15 +4,31 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
-const COLORS = [
+// Diseño de "placa remachada": cada bloque es una placa amarilla con un
+// acento de color en diagonal y un remache (bolt) circular en el centro.
+const PLATE_COLOR = '#f2c230';
+const BORDER_COLOR = '#1a1206';
+
+const ACCENT_COLORS = [
   null,
-  '#4dd0e1', // I - cyan
-  '#ffd54f', // O - yellow
-  '#ba68c8', // T - purple
-  '#81c784', // S - green
-  '#e57373', // Z - red
-  '#7986cb', // J - indigo
-  '#ffb74d', // L - orange
+  '#b8461f', // I - naranja óxido
+  null,      // O - la placa amarilla es su propio acento
+  '#a63fa6', // T - magenta
+  '#3f9142', // S - verde
+  '#c92e26', // Z - rojo
+  '#2fb6c4', // J - cian
+  '#e08a1e', // L - naranja
+];
+
+const BOLT_COLORS = [
+  null,
+  '#5c7fa3', // I
+  '#3f6fae', // O
+  '#e8bfe4', // T
+  '#dff2e0', // S
+  '#3f6fae', // Z
+  '#e7e7e7', // J
+  '#3f6fae', // L
 ];
 
 const PIECES = [
@@ -158,14 +174,63 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
+  const accent = ACCENT_COLORS[colorIndex];
+  const bolt = BOLT_COLORS[colorIndex];
+  const px = x * size;
+  const py = y * size;
+  const half = size / 2;
+
+  context.save();
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+
+  // placa base amarilla
+  context.fillStyle = PLATE_COLOR;
+  context.fillRect(px + 1, py + 1, size - 2, size - 2);
+
+  if (accent) {
+    // acento diagonal (dos cuadrantes de color, dos en negro)
+    context.fillStyle = accent;
+    context.fillRect(px + 1, py + 1, half - 1, half - 1);
+    context.fillRect(px + half, py + half, half - 1, half - 1);
+    context.fillStyle = BORDER_COLOR;
+    context.fillRect(px + half, py + 1, half - 1, half - 1);
+    context.fillRect(px + 1, py + half, half - 1, half - 1);
+  } else {
+    // pieza O: solo cruz negra dividiendo la placa amarilla
+    context.strokeStyle = BORDER_COLOR;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(px + half, py + 2);
+    context.lineTo(px + half, py + size - 2);
+    context.moveTo(px + 2, py + half);
+    context.lineTo(px + size - 2, py + half);
+    context.stroke();
+  }
+
+  // borde de la placa
+  context.strokeStyle = BORDER_COLOR;
+  context.lineWidth = 2;
+  context.strokeRect(px + 1, py + 1, size - 2, size - 2);
+
+  // remache central
+  const cx = px + half;
+  const cy = py + half;
+  const rOuter = size * 0.19;
+  const rInner = size * 0.12;
+  context.fillStyle = BORDER_COLOR;
+  context.beginPath();
+  context.arc(cx, cy, rOuter, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = bolt;
+  context.beginPath();
+  context.arc(cx, cy, rInner, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = 'rgba(255,255,255,0.6)';
+  context.beginPath();
+  context.arc(cx - rInner * 0.35, cy - rInner * 0.35, rInner * 0.3, 0, Math.PI * 2);
+  context.fill();
+
+  context.restore();
 }
 
 function drawGrid() {
