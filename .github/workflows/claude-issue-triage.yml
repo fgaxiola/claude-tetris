@@ -31,7 +31,7 @@ jobs:
             3. Apply the appropriate labels with `gh issue edit ${{ github.event.issue.number }} --add-label "<label>"`.
                - Use existing repo labels when they fit (check with `gh label list`).
                - Create a new label with `gh label create` only if no existing label fits (e.g. `bug`, `enhancement`, `question`, or an area label like `game-logic`, `rendering`, `docs`).
-            4. Post one comment on the issue (`gh issue comment ${{ github.event.issue.number }} --body "..."`) containing a general diagnosis:
+            4. Post one comment on the issue (`gh issue comment ${{ github.event.issue.number }} --body "..."`) containing a general diagnosis, formatted in concise GitHub-flavored Markdown (short bullet points, `code` spans for file/symbol names, no long paragraphs):
                - Root cause / affected code area (reference file:line where relevant).
                - Suggested approach for a fix or implementation, at a high level — do not write the implementation itself.
                - Any risks or open questions that need clarifying before coding starts.
