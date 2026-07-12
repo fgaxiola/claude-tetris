@@ -90,6 +90,28 @@ body {
   border-color: var(--title-color);
 }
 
+.mute-toggle {
+  position: absolute;
+  top: 0;
+  right: 44px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--board-bg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.mute-toggle:hover {
+  border-color: var(--title-color);
+}
+
 .game-title {
   text-align: center;
   font-size: 32px;

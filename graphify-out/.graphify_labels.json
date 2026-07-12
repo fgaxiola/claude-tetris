@@ -7,5 +7,7 @@
   "5": "collide",
   "6": "spawn",
   "7": "Cómo funciona",
-  "8": "grantPowerUp"
+  "8": "grantPowerUp",
+  "9": "applyMute",
+  "10": "playChainSound"
 }

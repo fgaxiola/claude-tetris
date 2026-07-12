@@ -61,3 +61,25 @@ _Avoid_: Compact, collapse, gap fill
 **Freeze**:
 A PowerUp that suspends only the automatic time-based drop for 5 seconds; the player retains full control (move, rotate, soft drop, hard drop) during that window. Triggering Freeze again while already active resets the 5-second window rather than extending or stacking it.
 _Avoid_: Pause, slow, time stop
+
+## Scoring Chains
+
+**Combo Count**:
+A running tally, starting at 0, tracking consecutive successful Line Clears. Every time a Line Clear happens — whether from a Lock's own clear or a clear triggered indirectly by a PowerUp such as Gravity — Combo Count increases by 1. Any clear attempt that clears zero lines resets Combo Count to 0. The origin of the clear never matters, only whether it happened.
+_Avoid_: streak, chain, combo (alone, when precision is needed)
+
+**Combo Multiplier**:
+A scoring factor equal to the current Combo Count, applied as `score += LINE_SCORES[cleared] * level * Combo Multiplier`. The first Line Clear of a fresh chain has a Combo Multiplier of 1 (no effect); the second consecutive Line Clear applies x2, the third x3, and so on.
+_Avoid_: combo bonus, multiplier (alone)
+
+**T-spin**:
+A scoring condition met when a Lock satisfies all of: the Piece is a T Piece; the last successful player action before Lock was a rotation, with no move or drop afterward; at least 3 of the 4 diagonal cells around the T Piece's center are occupied (by a Board Cell or the Board's edge) at Lock time; and the Lock's Line Clear clears at least 1 line. Only the T Piece can produce a T-spin — no other Piece qualifies. A T-spin applies a fixed T-spin Multiplier on top of the normal score formula. A T-spin that clears 0 lines earns no bonus.
+_Avoid_: T-spin mini, rotation bonus, spin
+
+**Back-to-Back Tetris**:
+A bonus applied when a Tetris Lock is immediately preceded by another Tetris Lock, with no intervening Line Clear of 1-3 lines. A Lock that clears 0 lines does not break a Back-to-Back Tetris streak; a T-spin clear of 1-3 lines does, exactly like any other non-Tetris clear — T-spins never extend or participate in a Back-to-Back Tetris streak. From the second consecutive Tetris onward, a flat Back-to-Back Multiplier applies; it does not grow further with a longer streak.
+_Avoid_: B2B, back to back, streak
+
+**Perfect Clear**:
+A bonus awarded when the Board holds zero Board Cells immediately after any successful Line Clear, regardless of origin (a Lock's own clear or a PowerUp-triggered clear such as Gravity's). Grants a flat bonus, added on top of the score from Combo Multiplier / T-spin Multiplier / Back-to-Back Multiplier rather than multiplying into it.
+_Avoid_: all clear, tetris clear

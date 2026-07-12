@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   "game.js": {
-    "mtime": 1783820987.0500762,
-    "ast_hash": "02169aa45d93cb2bec46deab3ff3ebdd",
+    "mtime": 1783825392.6486738,
+    "ast_hash": "3d7832e8c9ac9a88be6edf5fa3c83950",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -20,8 +20,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1783820590.7423646,
-    "ast_hash": "a8eaa275c9502c78ce8f4daebae1e7b7",
+    "mtime": 1783825289.5002828,
+    "ast_hash": "5fb367ed3baa4882928fe151fbeb822e",
     "semantic_hash": ""
   },
   ".github/workflows/claude-code-review.yml": {
@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "CONTEXT.md": {
-    "mtime": 1783819906.196857,
-    "ast_hash": "aaf21b79a9ca5ec48401dd0652c345ae",
+    "mtime": 1783825063.7115579,
+    "ast_hash": "44d2eb1acdf062cd400d7e9dd8c6c0a5",
     "semantic_hash": ""
   }
 }
