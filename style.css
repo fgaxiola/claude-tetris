@@ -26,6 +26,10 @@
   --restart-hover: #9bbdff;
   --grid-line: #22222e;
   --block-highlight: rgba(255, 255, 255, 0.12);
+  --highscore-highlight-bg: rgba(122, 162, 247, 0.18);
+  --highscore-highlight-color: #ffd54f;
+  --input-bg: #1a1a25;
+  --input-border: #3a3a5a;
 }
 
 [data-theme="light"] {
@@ -50,6 +54,10 @@
   --restart-hover: #5c7ce0;
   --grid-line: #d8d8e5;
   --block-highlight: rgba(0, 0, 0, 0.1);
+  --highscore-highlight-bg: rgba(59, 91, 219, 0.12);
+  --highscore-highlight-color: #b8860b;
+  --input-bg: #ffffff;
+  --input-border: #c0c0d8;
 }
 
 body {
@@ -280,4 +288,118 @@ kbd {
 
 #restart-btn:hover {
   background: var(--restart-hover);
+}
+
+/* ---- Leaderboard ---- */
+.leaderboard {
+  width: 220px;
+  text-align: left;
+}
+
+.leaderboard.hidden {
+  display: none;
+}
+
+.leaderboard-heading {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--label-color);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+#leaderboard-list {
+  list-style: decimal inside;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+#leaderboard-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+#leaderboard-list li.leaderboard-highlight {
+  background: var(--highscore-highlight-bg);
+  color: var(--highscore-highlight-color);
+  font-weight: 700;
+}
+
+#leaderboard-list li.leaderboard-empty {
+  justify-content: center;
+  list-style: none;
+  color: var(--controls-color);
+}
+
+.leaderboard-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--controls-color);
+  margin-top: 8px;
+}
+
+/* ---- Name entry ---- */
+.name-entry {
+  display: flex;
+  gap: 8px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+#player-name-input {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 13px;
+  width: 120px;
+}
+
+#submit-name-btn {
+  background: var(--restart-bg);
+  color: var(--restart-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#submit-name-btn:hover {
+  background: var(--restart-hover);
+}
+
+/* ---- Reset leaderboard ---- */
+.reset-scores-btn {
+  margin-top: 4px;
+  background: transparent;
+  color: var(--controls-color);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.reset-scores-btn.hidden {
+  display: none;
+}
+
+.reset-scores-btn:hover {
+  border-color: var(--overlay-title-color);
+  color: var(--overlay-title-color);
 }
