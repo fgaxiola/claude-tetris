@@ -1,0 +1,27 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1783799210.8031955,
+    "ast_hash": "6478c1696933abe46d54c55eb0954cee",
+    "semantic_hash": ""
+  },
+  "game.js": {
+    "mtime": 1783032387.3876545,
+    "ast_hash": "faeba243cb88087295ef9f98bb95cee5",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1783799210.8028784,
+    "ast_hash": "a3e83ff095cae322ebc02ac311b371ac",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783032387.3874831,
+    "ast_hash": "cfaa4406d46a88aaea250c6ff5914a27",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1783032387.3877535,
+    "ast_hash": "00f51011155a64ecd8f26047e5bc9fee",
+    "semantic_hash": ""
+  }
+}
