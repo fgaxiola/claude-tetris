@@ -67,6 +67,15 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 const muteToggleBtn = document.getElementById('mute-toggle');
+const highscoresListEl = document.getElementById('highscores-list');
+const bestComboEl = document.getElementById('best-combo');
+const maxLinesEl = document.getElementById('max-lines');
+const resetScoresBtn = document.getElementById('reset-scores-btn');
+const overlayHighscoresWrap = document.getElementById('overlay-highscores-wrap');
+const overlayHighscoresList = document.getElementById('overlay-highscores-list');
+const nameEntryEl = document.getElementById('name-entry');
+const playerNameInput = document.getElementById('player-name-input');
+const saveScoreBtn = document.getElementById('save-score-btn');
 
 const pauseMenu = document.getElementById('pause-menu');
 const pauseMainView = document.getElementById('pause-main-view');
@@ -80,13 +89,16 @@ const startLevelSelect = document.getElementById('start-level-select');
 const MAX_START_LEVEL = 20;
 
 const THEME_KEY = 'tetris-theme';
+const HIGHSCORES_KEY = 'tetris-highscores';
+const STATS_KEY = 'tetris-stats';
+const MAX_HIGHSCORES = 5;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let gridLineColor, blockHighlightColor;
 let armedTintColor, freezeUntil, powerupToastTimer;
 let effects;
 let pendingMini;
-let comboCount, tetrisStreak, lastActionWasRotation;
+let comboCount, tetrisStreak, lastActionWasRotation, maxComboRun;
 let audioCtx, muted;
 
 function cssVar(name) {
@@ -158,6 +170,84 @@ function restartFromPauseMenu() {
   pauseMenu.classList.add('hidden');
   const startLevel = parseInt(startLevelSelect.value, 10) || 1;
   init(startLevel);
+}
+
+function loadHighScores() {
+  try {
+    return JSON.parse(localStorage.getItem(HIGHSCORES_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHighScoresList(list) {
+  localStorage.setItem(HIGHSCORES_KEY, JSON.stringify(list));
+}
+
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem(STATS_KEY)) || { bestCombo: 0, maxLines: 0 };
+  } catch {
+    return { bestCombo: 0, maxLines: 0 };
+  }
+}
+
+function saveStats(stats) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+
+function qualifiesForHighScore(s) {
+  const list = loadHighScores();
+  return list.length < MAX_HIGHSCORES || s > list[list.length - 1].score;
+}
+
+function addHighScore(name, s) {
+  const list = loadHighScores();
+  list.push({ name: name || 'Jugador', score: s });
+  list.sort((a, b) => b.score - a.score);
+  list.splice(MAX_HIGHSCORES);
+  saveHighScoresList(list);
+  return list;
+}
+
+function renderHighScores(listEl, highlightScore) {
+  const list = loadHighScores();
+  listEl.innerHTML = '';
+  if (list.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Sin récords aún';
+    li.className = 'empty';
+    listEl.appendChild(li);
+    return;
+  }
+  for (const entry of list) {
+    const li = document.createElement('li');
+    li.textContent = `${entry.name} — ${entry.score.toLocaleString()}`;
+    if (highlightScore != null && entry.score === highlightScore) li.classList.add('highlight');
+    listEl.appendChild(li);
+  }
+}
+
+function refreshStatsDisplay() {
+  const stats = loadStats();
+  bestComboEl.textContent = stats.bestCombo;
+  maxLinesEl.textContent = stats.maxLines;
+}
+
+function updateStats(comboThisRun, linesThisRun) {
+  const stats = loadStats();
+  let changed = false;
+  if (comboThisRun > stats.bestCombo) { stats.bestCombo = comboThisRun; changed = true; }
+  if (linesThisRun > stats.maxLines) { stats.maxLines = linesThisRun; changed = true; }
+  if (changed) saveStats(stats);
+  refreshStatsDisplay();
+}
+
+function resetHighScores() {
+  localStorage.removeItem(HIGHSCORES_KEY);
+  localStorage.removeItem(STATS_KEY);
+  renderHighScores(highscoresListEl);
+  refreshStatsDisplay();
 }
 
 function ensureAudio() {
@@ -311,6 +401,7 @@ function clearLines(isTspin) {
   if (cleared) {
     lines += cleared;
     comboCount++;
+    if (comboCount > maxComboRun) maxComboRun = comboCount;
 
     let multiplier = comboCount;
     if (isTspin) multiplier *= TSPIN_MULTIPLIER;
@@ -724,6 +815,23 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  updateStats(maxComboRun, lines);
+  overlayHighscoresWrap.classList.remove('hidden');
+  if (qualifiesForHighScore(score)) {
+    nameEntryEl.classList.remove('hidden');
+    playerNameInput.value = '';
+    renderHighScores(overlayHighscoresList);
+    saveScoreBtn.onclick = () => {
+      addHighScore(playerNameInput.value.trim(), score);
+      nameEntryEl.classList.add('hidden');
+      renderHighScores(overlayHighscoresList, score);
+      renderHighScores(highscoresListEl);
+    };
+    setTimeout(() => playerNameInput.focus(), 0);
+  } else {
+    nameEntryEl.classList.add('hidden');
+    renderHighScores(overlayHighscoresList);
+  }
   overlay.classList.remove('hidden');
 }
 
@@ -770,6 +878,7 @@ function init(startLevel) {
   pendingMini = false;
   comboCount = 0;
   tetrisStreak = 0;
+  maxComboRun = 0;
   lastActionWasRotation = false;
   clearTimeout(powerupToastTimer);
   powerupToastEl.classList.remove('show');
@@ -778,11 +887,16 @@ function init(startLevel) {
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  nameEntryEl.classList.add('hidden');
+  overlayHighscoresWrap.classList.add('hidden');
+  renderHighScores(highscoresListEl);
+  refreshStatsDisplay();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
+  if (document.activeElement === playerNameInput) return;
   if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -810,6 +924,12 @@ document.addEventListener('keydown', e => {
 restartBtn.addEventListener('click', () => init());
 themeToggleBtn.addEventListener('click', toggleTheme);
 muteToggleBtn.addEventListener('click', toggleMute);
+resetScoresBtn.addEventListener('click', () => {
+  if (confirm('¿Resetear todos los récords?')) resetHighScores();
+});
+playerNameInput.addEventListener('keydown', e => {
+  if (e.code === 'Enter') saveScoreBtn.click();
+});
 
 resumeBtn.addEventListener('click', resumePauseMenu);
 pauseRestartBtn.addEventListener('click', restartFromPauseMenu);
