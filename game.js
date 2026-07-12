@@ -67,6 +67,7 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 const muteToggleBtn = document.getElementById('mute-toggle');
+const skinButtons = document.querySelectorAll('.skin-btn');
 
 const THEME_KEY = 'tetris-theme';
 
@@ -113,6 +114,134 @@ function initMute() {
 
 function toggleMute() {
   applyMute(!muted);
+}
+
+// ---- Skins ----
+
+const SKIN_KEY = 'tetris-skin';
+
+// Softer/desaturated palette used by the Pastel skin.
+const PASTEL_COLORS = [
+  null,
+  '#a8dadc', // I
+  '#ffe8a3', // O
+  '#d8bfd8', // T
+  '#b8e0c0', // S
+  '#f3b8b8', // Z
+  '#b8c0e8', // J
+  '#ffd8a8', // L
+  '#c8d0d4', // N - ring
+  '#b0e0b8', // Plus pentomino
+  '#b8e0f0', // U pentomino
+  '#f0c0d0', // Y pentomino
+  '#fff0b0', // Mini - gold reward
+];
+
+let activeSkin = 'retro';
+
+function drawRoundedRectPath(context, x, y, w, h, r) {
+  context.moveTo(x + r, y);
+  context.arcTo(x + w, y, x + w, y + h, r);
+  context.arcTo(x + w, y + h, x, y + h, r);
+  context.arcTo(x, y + h, x, y, r);
+  context.arcTo(x, y, x + w, y, r);
+  context.closePath();
+}
+
+// Retro: current/original look — flat-colored squares with a highlight strip.
+function drawBlockRetro(context, x, y, colorIndex, size, alpha) {
+  const color = COLORS[colorIndex];
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillStyle = blockHighlightColor;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+// Neon: glowing blocks via shadowBlur/shadowColor over a black background.
+function drawBlockNeon(context, x, y, colorIndex, size, alpha) {
+  const color = COLORS[colorIndex];
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.shadowColor = color;
+  context.shadowBlur = size * 0.6;
+  context.fillStyle = color;
+  context.fillRect(x * size + 2, y * size + 2, size - 4, size - 4);
+  context.shadowBlur = 0;
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = 1;
+  context.globalAlpha = (alpha ?? 1) * 0.6;
+  context.strokeRect(x * size + 2, y * size + 2, size - 4, size - 4);
+  context.restore();
+}
+
+// Pastel: desaturated palette with rounded-corner blocks.
+function drawBlockPastel(context, x, y, colorIndex, size, alpha) {
+  const color = PASTEL_COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const w = size - 2;
+  const h = size - 2;
+  const r = Math.min(6, w / 3);
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.beginPath();
+  if (context.roundRect) context.roundRect(px, py, w, h, r);
+  else drawRoundedRectPath(context, px, py, w, h, r);
+  context.fill();
+  context.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  context.beginPath();
+  const highlightH = h * 0.35;
+  if (context.roundRect) context.roundRect(px, py, w, highlightH, r);
+  else drawRoundedRectPath(context, px, py, w, highlightH, r);
+  context.fill();
+  context.restore();
+}
+
+// Pixel art: flat block with a small checker texture drawn over it.
+function drawBlockPixel(context, x, y, colorIndex, size, alpha) {
+  const color = COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const w = size - 2;
+  const h = size - 2;
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(px, py, w, h);
+  const cell = Math.max(2, Math.floor(w / 4));
+  context.fillStyle = 'rgba(0, 0, 0, 0.15)';
+  for (let ry = 0; ry < h; ry += cell) {
+    for (let rx = 0; rx < w; rx += cell) {
+      const checker = ((Math.floor(rx / cell) + Math.floor(ry / cell)) % 2) === 0;
+      if (checker) context.fillRect(px + rx, py + ry, cell, cell);
+    }
+  }
+  context.fillStyle = blockHighlightColor;
+  context.fillRect(px, py, w, 3);
+  context.globalAlpha = 1;
+}
+
+const SKIN_DRAWERS = {
+  retro: drawBlockRetro,
+  neon: drawBlockNeon,
+  pastel: drawBlockPastel,
+  pixel: drawBlockPixel,
+};
+
+function applySkin(skin) {
+  if (!SKIN_DRAWERS[skin]) skin = 'retro';
+  activeSkin = skin;
+  document.documentElement.setAttribute('data-skin', skin);
+  localStorage.setItem(SKIN_KEY, skin);
+  skinButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.skin === skin);
+  });
+}
+
+function initSkin() {
+  applySkin(localStorage.getItem(SKIN_KEY) || 'retro');
 }
 
 function ensureAudio() {
@@ -458,14 +587,7 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = blockHighlightColor;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  SKIN_DRAWERS[activeSkin](context, x, y, colorIndex, size, alpha);
 }
 
 function drawGrid() {
@@ -773,7 +895,11 @@ document.addEventListener('keydown', e => {
 restartBtn.addEventListener('click', init);
 themeToggleBtn.addEventListener('click', toggleTheme);
 muteToggleBtn.addEventListener('click', toggleMute);
+skinButtons.forEach(btn => {
+  btn.addEventListener('click', () => applySkin(btn.dataset.skin));
+});
 
 initTheme();
 initMute();
+initSkin();
 init();

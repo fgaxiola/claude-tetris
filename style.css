@@ -164,6 +164,45 @@ body {
   transform: translate(-50%, 0);
 }
 
+/* ---- Skins ---- */
+[data-skin="neon"] #board {
+  background: #000000;
+  border-color: #1a1a1a;
+}
+
+[data-skin="neon"] #next-canvas {
+  background: #000000;
+  border-color: #1a1a1a;
+}
+
+.skin-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skin-btn {
+  padding: 4px 8px;
+  background: var(--board-bg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  color: var(--controls-color);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.skin-btn:hover {
+  border-color: var(--title-color);
+}
+
+.skin-btn.active {
+  background: var(--title-color);
+  border-color: var(--title-color);
+  color: var(--restart-color);
+}
+
 /* ---- Panel lateral ---- */
 .panel {
   width: 160px;
