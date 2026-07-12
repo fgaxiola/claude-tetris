@@ -36,5 +36,6 @@ jobs:
                - Suggested approach for a fix or implementation, at a high level — do not write the implementation itself.
                - Any risks or open questions that need clarifying before coding starts.
             5. Do not modify any files in the repository. Do not open a pull request. Only label and comment on the issue.
+            6. Write the issue comment in Spanish, even though code snippets, file paths, and identifiers stay in English.
 
           claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*)"'
