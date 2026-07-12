@@ -30,6 +30,12 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const POWERUP_INTERVAL = 1;    // lines needed to grant one PowerUp
+const POWERUP_CELL_SCORE = 10; // flat points per cell destroyed by a PowerUp
+const FREEZE_MS = 5000;
+const POWERUP_TOAST_MS = 1000;
+const POWERUP_NAMES = ['Bomb', 'Bolt', 'Tint', 'Gravity', 'Freeze'];
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -37,6 +43,7 @@ const nextCtx = nextCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const powerupToastEl = document.getElementById('powerup-toast');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
@@ -47,6 +54,8 @@ const THEME_KEY = 'tetris-theme';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let gridLineColor, blockHighlightColor;
+let armedTintColor, freezeUntil, powerupToastTimer;
+let effects;
 
 function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -120,15 +129,38 @@ function merge() {
         board[current.y + r][current.x + c] = current.shape[r][c];
 }
 
+function addEffect(type, data, duration) {
+  effects.push({ type, data, duration, start: performance.now() });
+}
+
+function detonateTint(fullRows) {
+  if (!armedTintColor) return;
+  if (!fullRows.some(r => board[r].includes(armedTintColor))) return;
+  const color = armedTintColor;
+  armedTintColor = 0;
+  const cells = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] === color) {
+        board[r][c] = 0;
+        score += POWERUP_CELL_SCORE;
+        cells.push({ r, c });
+      }
+  addEffect('tintFire', { color, cells }, 350);
+}
+
 function clearLines() {
-  let cleared = 0;
+  const fullRows = [];
   for (let r = ROWS - 1; r >= 0; r--) {
-    if (board[r].every(v => v !== 0)) {
-      board.splice(r, 1);
-      board.unshift(new Array(COLS).fill(0));
-      cleared++;
-      r++;
-    }
+    if (board[r].every(v => v !== 0)) fullRows.push(r);
+  }
+  detonateTint(fullRows);
+
+  let cleared = 0;
+  for (const r of fullRows) {
+    board.splice(r + cleared, 1);
+    board.unshift(new Array(COLS).fill(0));
+    cleared++;
   }
   if (cleared) {
     lines += cleared;
@@ -162,9 +194,109 @@ function softDrop() {
   }
 }
 
-function lockPiece() {
-  merge();
+function lockCenter() {
+  return {
+    x: current.x + Math.floor(current.shape[0].length / 2),
+    y: current.y + Math.floor(current.shape.length / 2),
+  };
+}
+
+function clearCell(r, c) {
+  if (board[r][c]) {
+    board[r][c] = 0;
+    score += POWERUP_CELL_SCORE;
+  }
+}
+
+function doBomb(center) {
+  const cx = Math.min(Math.max(center.x, 1), COLS - 2);
+  const cy = Math.min(Math.max(center.y, 1), ROWS - 2);
+  const cells = [];
+  for (let r = cy - 1; r <= cy + 1; r++)
+    for (let c = cx - 1; c <= cx + 1; c++) {
+      clearCell(r, c);
+      cells.push({ r, c });
+    }
+  addEffect('bomb', { cx, cy, cells }, 450);
+}
+
+function doBolt(center) {
+  const cells = [];
+  const horizontal = Math.random() < 0.5;
+  if (horizontal) {
+    for (let c = 0; c < COLS; c++) { clearCell(center.y, c); cells.push({ r: center.y, c }); }
+  } else {
+    for (let r = 0; r < ROWS; r++) { clearCell(r, center.x); cells.push({ r, c: center.x }); }
+  }
+  addEffect('bolt', { horizontal, index: horizontal ? center.y : center.x, cells }, 300);
+}
+
+function doTint() {
+  const present = new Set();
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c]) present.add(board[r][c]);
+  if (present.size === 0) return;
+  const colors = [...present];
+  armedTintColor = colors[Math.floor(Math.random() * colors.length)];
+  const cells = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] === armedTintColor) cells.push({ r, c });
+  addEffect('tintArm', { color: armedTintColor, cells }, 500);
+}
+
+function doGravity() {
+  const moves = [];
+  for (let c = 0; c < COLS; c++) {
+    const filled = [];
+    for (let r = 0; r < ROWS; r++)
+      if (board[r][c]) filled.push({ r, value: board[r][c] });
+    for (let r = 0; r < ROWS; r++)
+      board[r][c] = 0;
+    for (let i = 0; i < filled.length; i++) {
+      const toRow = ROWS - filled.length + i;
+      board[toRow][c] = filled[i].value;
+      if (filled[i].r !== toRow) moves.push({ c, fromRow: filled[i].r, toRow, value: filled[i].value });
+    }
+  }
+  addEffect('gravity', { moves }, 350);
   clearLines();
+}
+
+function doFreeze() {
+  freezeUntil = performance.now() + FREEZE_MS;
+  addEffect('freezeCast', {}, 300);
+}
+
+function showPowerUpToast(name) {
+  powerupToastEl.textContent = name;
+  powerupToastEl.classList.add('show');
+  clearTimeout(powerupToastTimer);
+  powerupToastTimer = setTimeout(() => powerupToastEl.classList.remove('show'), POWERUP_TOAST_MS);
+}
+
+function grantPowerUp(center) {
+  const roll = Math.floor(Math.random() * 5);
+  switch (roll) {
+    case 0: doBomb(center); break;
+    case 1: doBolt(center); break;
+    case 2: doTint(); break;
+    case 3: doGravity(); break;
+    case 4: doFreeze(); break;
+  }
+  showPowerUpToast(POWERUP_NAMES[roll]);
+  updateHUD();
+}
+
+function lockPiece() {
+  const center = lockCenter();
+  merge();
+  const prevLines = lines;
+  clearLines();
+  if (Math.floor(lines / POWERUP_INTERVAL) > Math.floor(prevLines / POWERUP_INTERVAL)) {
+    grantPowerUp(center);
+  }
   spawn();
 }
 
@@ -212,14 +344,147 @@ function drawGrid() {
   }
 }
 
-function draw() {
+function fillCell(r, c, color, alpha) {
+  ctx.globalAlpha = alpha ?? 1;
+  ctx.fillStyle = color;
+  ctx.fillRect(c * BLOCK + 1, r * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+  ctx.globalAlpha = 1;
+}
+
+function strokeCellRect(r, c, w, h, color, alpha, lineWidth) {
+  ctx.globalAlpha = alpha ?? 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth ?? 2;
+  ctx.strokeRect(c * BLOCK, r * BLOCK, w * BLOCK, h * BLOCK);
+  ctx.globalAlpha = 1;
+}
+
+function renderBomb(data, p, frame) {
+  const { cx, cy, cells } = data;
+  const flash = frame % 2 === 0 ? '#fff176' : '#ff7043';
+  const alpha = Math.max(0, 1 - p);
+  for (const { r, c } of cells) fillCell(r, c, flash, alpha);
+  const ring = Math.min(2, Math.floor(p * 3));
+  strokeCellRect(cy - 1 - ring, cx - 1 - ring, 3 + ring * 2, 3 + ring * 2, '#ff7043', Math.max(0, 0.8 - p * 0.8), 3);
+}
+
+function renderBolt(data, p, frame) {
+  const { horizontal, index, cells } = data;
+  if (frame % 2 === 0) {
+    const color = frame % 4 === 0 ? '#ffffff' : '#fff176';
+    const alpha = Math.max(0, 1 - p);
+    for (const { r, c } of cells) fillCell(r, c, color, alpha);
+  }
+  ctx.globalAlpha = Math.max(0, 1 - p);
+  ctx.strokeStyle = '#fff176';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  const jitter = (frame % 2 === 0) ? 4 : -4;
+  if (horizontal) {
+    const y = index * BLOCK + BLOCK / 2;
+    ctx.moveTo(0, y - jitter);
+    for (let x = 0; x <= COLS * BLOCK; x += BLOCK) ctx.lineTo(x, y + (x / BLOCK % 2 === 0 ? jitter : -jitter));
+  } else {
+    const x = index * BLOCK + BLOCK / 2;
+    ctx.moveTo(x - jitter, 0);
+    for (let y = 0; y <= ROWS * BLOCK; y += BLOCK) ctx.lineTo(x + (y / BLOCK % 2 === 0 ? jitter : -jitter), y);
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function renderTintArm(data, p, frame) {
+  const { color, cells } = data;
+  const pulse = frame % 2 === 0 ? 0 : 4;
+  const alpha = Math.max(0, 0.9 - p * 0.9);
+  for (const { r, c } of cells) {
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = COLORS[color];
+    ctx.lineWidth = 3;
+    ctx.strokeRect(c * BLOCK - pulse / 2, r * BLOCK - pulse / 2, BLOCK + pulse, BLOCK + pulse);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function renderTintFire(data, p, frame) {
+  const { cells } = data;
+  const alpha = Math.max(0, 1 - p);
+  if (frame % 2 === 0) for (const { r, c } of cells) fillCell(r, c, '#ffffff', alpha);
+}
+
+function renderGravity(data, p) {
+  const steps = 6;
+  const step = Math.min(steps - 1, Math.floor(p * steps));
+  for (const { c, fromRow, toRow, value } of data.moves) {
+    const row = fromRow + Math.round((toRow - fromRow) * (step / (steps - 1)));
+    drawBlock(ctx, c, row, value, BLOCK);
+  }
+}
+
+function renderFreezeCast(data, p) {
+  ctx.globalAlpha = Math.max(0, 0.5 - p * 0.5);
+  ctx.fillStyle = '#4dd0e1';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1;
+}
+
+const EFFECT_RENDERERS = {
+  bomb: renderBomb,
+  bolt: renderBolt,
+  tintArm: renderTintArm,
+  tintFire: renderTintFire,
+  gravity: renderGravity,
+  freezeCast: renderFreezeCast,
+};
+
+function renderEffects(ts) {
+  effects = effects.filter(e => ts - e.start < e.duration);
+  for (const e of effects) {
+    const p = (ts - e.start) / e.duration;
+    const frame = Math.floor(p * 8);
+    EFFECT_RENDERERS[e.type](e.data, p, frame);
+  }
+}
+
+function drawFreezeOverlay(ts) {
+  if (ts >= freezeUntil) return;
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = '#4dd0e1';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1;
+  const blink = Math.floor(ts / 250) % 2 === 0;
+  ctx.fillStyle = blink ? '#4dd0e1' : '#b3e5fc';
+  const s = 8;
+  for (let x = 0; x < canvas.width; x += s * 2) {
+    ctx.fillRect(x, 0, s, s);
+    ctx.fillRect(x, canvas.height - s, s, s);
+  }
+  for (let y = 0; y < canvas.height; y += s * 2) {
+    ctx.fillRect(0, y, s, s);
+    ctx.fillRect(canvas.width - s, y, s, s);
+  }
+}
+
+function draw(ts) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  const bombEffect = effects.find(e => e.type === 'bomb' && (ts - e.start) / e.duration < 0.4);
+  if (bombEffect) {
+    const shakeFrame = Math.floor(ts / 50);
+    const sx = (shakeFrame % 2 === 0 ? 1 : -1) * 3;
+    const sy = (shakeFrame % 3 === 0 ? -1 : 1) * 3;
+    ctx.translate(sx, sy);
+  }
+
   drawGrid();
 
   // board
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
       drawBlock(ctx, c, r, board[r][c], BLOCK);
+
+  renderEffects(ts);
 
   // ghost
   const gy = ghostY();
@@ -232,6 +497,10 @@ function draw() {
   for (let r = 0; r < current.shape.length; r++)
     for (let c = 0; c < current.shape[r].length; c++)
       drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+
+  ctx.restore();
+
+  drawFreezeOverlay(ts);
 }
 
 function drawNext() {
@@ -270,7 +539,11 @@ function togglePause() {
 function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
-  dropAccum += dt;
+  if (ts < freezeUntil) {
+    dropAccum = 0;
+  } else {
+    dropAccum += dt;
+  }
   if (dropAccum >= dropInterval) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
@@ -280,7 +553,7 @@ function loop(ts) {
     }
   }
   if (gameOver) return;
-  draw();
+  draw(ts);
   animId = requestAnimationFrame(loop);
 }
 
@@ -293,6 +566,11 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  armedTintColor = 0;
+  freezeUntil = 0;
+  effects = [];
+  clearTimeout(powerupToastTimer);
+  powerupToastEl.classList.remove('show');
   lastTime = performance.now();
   next = randomPiece();
   spawn();

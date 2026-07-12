@@ -106,12 +106,40 @@ body {
   align-items: flex-start;
 }
 
+.board-wrap {
+  position: relative;
+}
+
 #board {
   display: block;
   border: 1px solid var(--board-border);
   background: var(--board-bg);
   border-radius: 4px;
   box-shadow: 0 0 40px var(--board-shadow);
+}
+
+.powerup-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+  color: var(--value-color);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.powerup-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* ---- Panel lateral ---- */
