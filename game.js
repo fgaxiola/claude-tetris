@@ -14,6 +14,10 @@ const COLORS = [
   '#7986cb', // J - indigo
   '#ffb74d', // L - orange
   '#90a4ae', // N - ring
+  '#66bb6a', // Plus pentomino
+  '#4fc3f7', // U pentomino
+  '#f06292', // Y pentomino
+  '#ffd700', // Mini - gold reward
 ];
 
 const PIECES = [
@@ -27,6 +31,15 @@ const PIECES = [
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
   [[8,8,8],[8,0,8],[8,8,8]],                  // N - ring
 ];
+
+const PENTOMINO_PIECES = [
+  [[0,9,0],[9,9,9],[0,9,0]],                  // Plus pentomino
+  [[10,0,10],[10,10,10]],                     // U pentomino
+  [[0,11],[11,11],[0,11],[0,11]],             // Y pentomino
+];
+const PENTOMINO_CHANCE = 0.05;
+
+const MINI_PIECE = [[12]];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
@@ -56,6 +69,7 @@ let board, current, next, score, lines, level, paused, gameOver, lastTime, dropA
 let gridLineColor, blockHighlightColor;
 let armedTintColor, freezeUntil, powerupToastTimer;
 let effects;
+let pendingMini;
 
 function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -82,10 +96,22 @@ function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
+function pieceFromShape(shape) {
+  return { shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
 function randomPiece() {
+  if (Math.random() < PENTOMINO_CHANCE) {
+    const shape = PENTOMINO_PIECES[Math.floor(Math.random() * PENTOMINO_PIECES.length)].map(row => [...row]);
+    return pieceFromShape(shape);
+  }
   const type = Math.floor(Math.random() * (PIECES.length - 1)) + 1;
   const shape = PIECES[type].map(row => [...row]);
-  return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+  return pieceFromShape(shape);
+}
+
+function makeMini() {
+  return pieceFromShape(MINI_PIECE.map(row => [...row]));
 }
 
 function collide(shape, ox, oy) {
@@ -169,6 +195,7 @@ function clearLines() {
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   }
+  return cleared;
 }
 
 function ghostY() {
@@ -293,7 +320,8 @@ function lockPiece() {
   const center = lockCenter();
   merge();
   const prevLines = lines;
-  clearLines();
+  const cleared = clearLines();
+  if (cleared === 4) pendingMini = true;
   if (Math.floor(lines / POWERUP_INTERVAL) > Math.floor(prevLines / POWERUP_INTERVAL)) {
     grantPowerUp(center);
   }
@@ -301,8 +329,13 @@ function lockPiece() {
 }
 
 function spawn() {
-  current = next;
-  next = randomPiece();
+  if (pendingMini) {
+    current = makeMini();
+    pendingMini = false;
+  } else {
+    current = next;
+    next = randomPiece();
+  }
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
@@ -569,6 +602,7 @@ function init() {
   armedTintColor = 0;
   freezeUntil = 0;
   effects = [];
+  pendingMini = false;
   clearTimeout(powerupToastTimer);
   powerupToastEl.classList.remove('show');
   lastTime = performance.now();

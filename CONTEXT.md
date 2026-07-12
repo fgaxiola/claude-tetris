@@ -20,6 +20,18 @@ _Avoid_: Hole, gap, block
 The event where a falling Piece's filled cells are written into the Board and a new Piece spawns. Only filled Piece cells participate; empty Piece cells (including the Ring Piece's center) are never written.
 _Avoid_: Merge, place, drop (drop refers to movement, not the fixing event)
 
+**Tetris**:
+A Line Clear of exactly four rows from a single Lock.
+_Avoid_: Quad, four-line clear
+
+**Pentomino**:
+One of the Pieces built from five filled cells (Plus, U, or Y), each with a 5% combined chance of being chosen in place of a classic Piece each time a new Piece is generated, split evenly among the three.
+_Avoid_: Special piece, bonus shape
+
+**Mini**:
+A single-cell Piece with a distinctive gold color, granted as the immediately current Piece the moment a Tetris occurs. Mini is never generated through normal random Piece selection — it exists only as this reward. The Piece that was already queued as the next preview is not discarded; it becomes the Piece after Mini.
+_Avoid_: Reward piece, bonus piece, 1x1
+
 ## Power-Ups
 
 **PowerUp**:
