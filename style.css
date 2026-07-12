@@ -281,3 +281,105 @@ kbd {
 #restart-btn:hover {
   background: var(--restart-hover);
 }
+
+/* ---- Récords ---- */
+.highscores-list {
+  list-style: decimal inside;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.highscores-list .empty {
+  color: var(--label-color);
+  font-style: italic;
+  list-style: none;
+}
+
+.highscores-list .highlight {
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+.highscores-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--controls-color);
+}
+
+.reset-scores-btn {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--board-border);
+  color: var(--controls-color);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.reset-scores-btn:hover {
+  border-color: var(--title-color);
+  color: var(--title-color);
+}
+
+.overlay-highscores-wrap {
+  width: 100%;
+  max-width: 220px;
+}
+
+.overlay-highscores-wrap.hidden {
+  display: none;
+}
+
+.overlay-highscores-wrap .label {
+  display: block;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.overlay-highscores-wrap .highscores-list {
+  align-items: center;
+}
+
+.name-entry {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+.name-entry input {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 120px;
+}
+
+.name-entry button {
+  background: var(--restart-bg);
+  color: var(--restart-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.name-entry button:hover {
+  background: var(--restart-hover);
+}
