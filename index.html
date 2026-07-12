@@ -60,7 +60,20 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <div id="leaderboard" class="leaderboard hidden">
+          <p class="leaderboard-heading">TOP SCORES</p>
+          <ol id="leaderboard-list"></ol>
+          <p class="leaderboard-stats">
+            <span>Best Combo: <span id="best-combo-value">0</span></span>
+            <span>Max Lines: <span id="max-lines-value">0</span></span>
+          </p>
+        </div>
+        <div id="name-entry" class="name-entry hidden">
+          <input id="player-name-input" type="text" maxlength="12" placeholder="YOUR NAME" autocomplete="off" />
+          <button id="submit-name-btn">Save</button>
+        </div>
         <button id="restart-btn">Reiniciar</button>
+        <button id="reset-scores-btn" class="reset-scores-btn hidden">Reset Leaderboard</button>
       </div>
     </div>
   </div>
