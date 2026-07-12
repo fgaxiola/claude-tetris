@@ -112,6 +112,43 @@ body {
   border-color: var(--title-color);
 }
 
+.skin-select {
+  position: absolute;
+  top: 0;
+  right: 88px;
+  height: 36px;
+  padding: 0 8px;
+  background: var(--board-bg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.skin-select:hover {
+  border-color: var(--title-color);
+}
+
+/* ---- Skins ---- */
+[data-skin="neon"] #board,
+[data-skin="neon"] #next-canvas {
+  background: #000000;
+  border-color: #00fff9;
+  box-shadow: 0 0 30px rgba(0, 255, 249, 0.25);
+}
+
+[data-skin="pastel"] #board,
+[data-skin="pastel"] #next-canvas {
+  border-radius: 16px;
+}
+
+[data-skin="pixel"] #board,
+[data-skin="pixel"] #next-canvas {
+  image-rendering: pixelated;
+}
+
 .game-title {
   text-align: center;
   font-size: 32px;
